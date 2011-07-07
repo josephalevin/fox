@@ -1964,6 +1964,8 @@ cat >conftest.$ac_ext <<_ACEOF
 
       end
 _ACEOF
+
+outflag_link='$FC $ac_link_obj_flag""conftestoutput.flag $FCFLAGS $LDFLAGS $FCFLAGS_SRCEXT conftest.$ac_ext $LIBS >&5'
 ac_clean_files_save=$ac_clean_files
 ac_clean_files="$ac_clean_files a.out a.exe b.out"
 # First try to determine the flag needed to name the executable
@@ -1971,17 +1973,21 @@ ac_clean_files="$ac_clean_files a.out a.exe b.out"
 { echo "$as_me:$LINENO: checking for linker flag to name executables" >&5
 echo $ECHO_N "checking for linker flag to name executables... $ECHO_C" >&6; }
 for ac_link_obj_flag in "/exe:" "-out " "-o "; do
-if { (ac_try="$ac_link"
+if { (ac_try="$outflag_link"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
   *) ac_try_echo=$ac_try;;
 esac
 eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>&5
+  (eval "$outflag_link") 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  ac_link_obj_flag_found=yes; break
+  #If the output file exists, then the correct flag was used
+  if [ -f $conftestoutput.flag] 	
+  then
+  	ac_link_obj_flag_found=yes; break
+  fi
 else
   :
 fi
@@ -2007,7 +2013,7 @@ ac_link_default=`echo "$ac_link" | sed 's/ $ac_link_obj_flag *conftest[^ ]*//'`
 # List of possible output files, starting from the most likely.
 # The algorithm is not robust to junk in `.', hence go to wildcards (a.*)
 # only as a last resort.  b.out is created by i960 compilers.
-ac_files='a_out.exe a.exe conftest.exe a.out conftest a.* conftest.* b.out'
+ac_files='a_out.exe a.exe conftest.exe a.out conftest a.* conftest.* b.out conftestoutput.flag'
 #
 # The IRIX 6 linker writes into existing files which may not be
 # executable, retaining their permissions.  Remove them first so a
