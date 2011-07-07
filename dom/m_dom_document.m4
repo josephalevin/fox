@@ -471,15 +471,24 @@ TOHW_m_dom_get(Node, documentElement, np%docExtras%documentElement, (DOCUMENT_NO
 
   end function createEmptyEntityReference
 
-  TOHW_function(getElementsByTagName, (doc, tagName, name), list)
+  TOHW_function(getElementsByTagName, (doc, tagName, name, recursive), list)
     type(Node), pointer :: doc
-    character(len=*), intent(in), optional :: tagName, name
+    character(len=*), intent(in), optional :: tagName, name    
     type(NodeList), pointer :: list
 
     type(NodeListPtr), pointer :: nll(:), temp_nll(:)
     type(Node), pointer :: arg, this, treeroot
     logical :: doneChildren, doneAttributes, allElements
     integer :: i, i_tree
+
+    !patched the ability to not be recursive
+    logical, intent(in), optional :: recursive
+    logical :: walktree
+    if(present(recursive)) then
+        walktree=recursive
+    else
+        walktree=.true.
+    end if
 
     if (.not.associated(doc)) then
       TOHW_m_dom_throw_error(FoX_NODE_IS_NULL)
@@ -532,8 +541,15 @@ TOHW_m_dom_get(Node, documentElement, np%docExtras%documentElement, (DOCUMENT_NO
 TOHW_m_dom_treewalk(`dnl
         if (this%nodeType==ELEMENT_NODE) then
           if ((allElements .or. str_vs(this%nodeName)==tagName) &
-            .and..not.(getNodeType(doc)==ELEMENT_NODE.and.associated(this, arg))) &
-            call append(list, this)
+            .and..not.(getNodeType(doc)==ELEMENT_NODE.and.associated(this, arg))) then
+
+            if(walktree) then
+                call append(list, this)
+            else if(associated(getParentNode(this), arg)) then
+                call append(list, this)
+            end if
+            
+          end if
           doneAttributes = .true.
         endif
 ',`')
@@ -841,7 +857,7 @@ TOHW_m_dom_treewalk(`dnl
 
   end function createAttributeNS
 
-  TOHW_function(getElementsByTagNameNS, (doc, namespaceURI, localName), list)
+  TOHW_function(getElementsByTagNameNS, (doc, namespaceURI, localName, recursive), list)
     type(Node), pointer :: doc
     character(len=*), intent(in) :: namespaceURI, localName
     type(NodeList), pointer :: list
@@ -850,6 +866,15 @@ TOHW_m_dom_treewalk(`dnl
     type(Node), pointer :: this, arg, treeroot
     logical :: doneChildren, doneAttributes, allLocalNames, allNameSpaces
     integer :: i, i_tree
+
+    !patched the ability to not be recursive
+    logical, intent(in), optional :: recursive
+    logical :: walktree
+    if(present(recursive)) then
+        walktree=recursive
+    else
+        walktree=.true.
+    end if
 
     if (.not.associated(doc)) then
       TOHW_m_dom_throw_error(FoX_NODE_IS_NULL)
@@ -898,13 +923,23 @@ TOHW_m_dom_treewalk(`dnl
         if (getNamespaceURI(this)/="") then
           if ((allNameSpaces .or. getNameSpaceURI(this)==namespaceURI) &
             .and. (allLocalNames .or. getLocalName(this)==localName) &
-            .and..not.(getNodeType(doc)==ELEMENT_NODE.and.associated(this, arg))) &
-            call append(list, this)
+            .and..not.(getNodeType(doc)==ELEMENT_NODE.and.associated(this, arg))) then
+                if(walktree) then
+                    call append(list, this)
+                else if(associated(getParentNode(this), arg)) then
+                    call append(list, this)
+                end if
+            end if
         else
           if ((allNameSpaces .or. namespaceURI=="") &
             .and. (allLocalNames .or. getNodeName(this)==localName) &
-            .and..not.(getNodeType(doc)==ELEMENT_NODE.and.associated(this, arg))) &
-            call append(list, this)
+            .and..not.(getNodeType(doc)==ELEMENT_NODE.and.associated(this, arg))) then            
+                if(walktree) then
+                    call append(list, this)
+                else if(associated(getParentNode(this), arg)) then
+                    call append(list, this)
+                end if
+            end if
         endif
         doneAttributes = .true. ! Never search attributes
       endif
